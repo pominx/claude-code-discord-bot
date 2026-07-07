@@ -91,15 +91,15 @@ describe('ClaudeManager', () => {
   });
 
   describe('setDiscordMessage', () => {
-    it('should set discord message and initialize responses', () => {
+    it('should set discord message and initialize tool call tracking', () => {
       const mockMessage = { edit: vi.fn() };
       manager.setDiscordMessage('channel-1', mockMessage);
-      
+
       const channelMessages = (manager as any).channelMessages;
-      const channelResponses = (manager as any).channelResponses;
-      
+      const channelToolCalls = (manager as any).channelToolCalls;
+
       expect(channelMessages.get('channel-1')).toBe(mockMessage);
-      expect(channelResponses.get('channel-1')).toEqual({ embeds: [], textContent: "" });
+      expect(channelToolCalls.get('channel-1')).toEqual(new Map());
     });
   });
 

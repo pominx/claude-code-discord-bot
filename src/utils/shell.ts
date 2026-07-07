@@ -3,10 +3,6 @@ export function escapeShellString(str: string): string {
   return `'${str.replace(/'/g, "'\\''")}'`;
 }
 
-import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
-
 export interface DiscordContext {
   channelId: string;
   channelName: string;
@@ -21,10 +17,8 @@ export function buildClaudeCommand(
   discordContext?: DiscordContext
 ): string {
   const escapedPrompt = escapeShellString(prompt);
-  
-  // Create session-specific MCP config in /tmp
-  const sessionMcpConfigPath = createSessionMcpConfig(discordContext);
-  
+  const mcpConfigJson = JSON.stringify(buildMcpConfig(discordContext));
+
   const commandParts = [
     `cd ${workingDir}`,
     "&&",
@@ -36,14 +30,16 @@ export function buildClaudeCommand(
     "-p",
     escapedPrompt,
     "--verbose",
+    // Claude Code 2.x accepts the MCP config inline as a JSON string; the
+    // permission server is reached over HTTP directly (no stdio bridge).
+    "--mcp-config",
+    escapeShellString(mcpConfigJson),
+    "--strict-mcp-config",
+    "--permission-prompt-tool",
+    "mcp__discord-permissions__approve_tool",
+    "--allowedTools",
+    "mcp__discord-permissions",
   ];
-
-  // Add session-specific MCP configuration
-  commandParts.push("--mcp-config", sessionMcpConfigPath);
-  commandParts.push("--permission-prompt-tool", "mcp__discord-permissions__approve_tool");
-  
-  // Add allowed tools - we'll let the MCP server handle permissions
-  commandParts.push("--allowedTools", "mcp__discord-permissions");
 
   if (sessionId) {
     commandParts.splice(3, 0, "--resume", sessionId);
@@ -53,65 +49,33 @@ export function buildClaudeCommand(
 }
 
 /**
- * Create a session-specific MCP config file with hardcoded Discord context
+ * MCP config pointing Claude Code at the bot's HTTP permission server.
+ * Discord context travels as HTTP headers, which the server reads to route
+ * approval prompts back to the right channel.
  */
-function createSessionMcpConfig(discordContext?: DiscordContext): string {
-  // Generate unique session ID for this config
-  const sessionId = `claude-discord-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  const configPath = path.join(os.tmpdir(), `mcp-config-${sessionId}.json`);
-  
-  const baseDir = path.dirname(path.dirname(__dirname)); // Go up to project root
-  const bridgeScriptPath = path.join(baseDir, 'mcp-bridge.cjs');
-  
-  // Create MCP config with hardcoded environment variables
-  const mcpConfig = {
-    mcpServers: {
-      "discord-permissions": {
-        command: "node",
-        args: [bridgeScriptPath],
-        env: {
-          DISCORD_CHANNEL_ID: discordContext?.channelId || "unknown",
-          DISCORD_CHANNEL_NAME: discordContext?.channelName || "unknown", 
-          DISCORD_USER_ID: discordContext?.userId || "unknown",
-          DISCORD_MESSAGE_ID: discordContext?.messageId || ""
-        }
-      }
-    }
-  };
-  
-  // Write the config file
-  fs.writeFileSync(configPath, JSON.stringify(mcpConfig, null, 2));
-  
-  console.log(`Created session MCP config: ${configPath}`);
-  console.log(`Discord context: ${JSON.stringify(discordContext)}`);
-  
-  // Clean up old session config files (older than 1 hour)
-  cleanupOldSessionConfigs();
-  
-  return configPath;
-}
+function buildMcpConfig(discordContext?: DiscordContext): object {
+  const port = process.env.MCP_SERVER_PORT || "3001";
 
-/**
- * Clean up old session MCP config files from /tmp
- */
-function cleanupOldSessionConfigs(): void {
-  try {
-    const tmpDir = os.tmpdir();
-    const files = fs.readdirSync(tmpDir);
-    const oneHourAgo = Date.now() - (60 * 60 * 1000); // 1 hour in milliseconds
-    
-    for (const file of files) {
-      if (file.startsWith('mcp-config-claude-discord-') && file.endsWith('.json')) {
-        const filePath = path.join(tmpDir, file);
-        const stats = fs.statSync(filePath);
-        
-        if (stats.mtime.getTime() < oneHourAgo) {
-          fs.unlinkSync(filePath);
-          console.log(`Cleaned up old MCP config: ${filePath}`);
-        }
-      }
+  const server: Record<string, unknown> = {
+    type: "http",
+    url: `http://localhost:${port}/mcp`,
+  };
+
+  if (discordContext) {
+    const headers: Record<string, string> = {
+      "X-Discord-Channel-Id": discordContext.channelId,
+      "X-Discord-Channel-Name": discordContext.channelName,
+      "X-Discord-User-Id": discordContext.userId,
+    };
+    if (discordContext.messageId) {
+      headers["X-Discord-Message-Id"] = discordContext.messageId;
     }
-  } catch (error) {
-    console.error('Error cleaning up old MCP configs:', error);
+    server.headers = headers;
   }
+
+  return {
+    mcpServers: {
+      "discord-permissions": server,
+    },
+  };
 }
