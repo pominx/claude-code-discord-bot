@@ -11,8 +11,9 @@ export function validateConfig(): Config {
   }
 
   if (!allowedUserId) {
-    console.error("ALLOWED_USER_ID environment variable is required");
-    process.exit(1);
+    console.warn(
+      "ALLOWED_USER_ID is not set - everyone in the channel can trigger the bot"
+    );
   }
 
   if (!baseFolder) {

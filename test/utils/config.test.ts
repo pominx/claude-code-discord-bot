@@ -45,22 +45,25 @@ describe('validateConfig', () => {
     consoleSpy.mockRestore();
   });
 
-  it('should exit with error when ALLOWED_USER_ID is missing', () => {
+  it('should return config with undefined allowedUserId and warn when ALLOWED_USER_ID is missing', () => {
     process.env.DISCORD_TOKEN = 'test-token';
     delete process.env.ALLOWED_USER_ID;
     process.env.BASE_FOLDER = '/test/folder';
 
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit called');
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const config = validateConfig();
+
+    expect(config).toEqual({
+      discordToken: 'test-token',
+      allowedUserId: undefined,
+      baseFolder: '/test/folder',
     });
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(warnSpy).toHaveBeenCalledWith(
+      'ALLOWED_USER_ID is not set - everyone in the channel can trigger the bot'
+    );
 
-    expect(() => validateConfig()).toThrow('process.exit called');
-    expect(consoleSpy).toHaveBeenCalledWith('ALLOWED_USER_ID environment variable is required');
-    expect(exitSpy).toHaveBeenCalledWith(1);
-
-    exitSpy.mockRestore();
-    consoleSpy.mockRestore();
+    warnSpy.mockRestore();
   });
 
   it('should exit with error when BASE_FOLDER is missing', () => {

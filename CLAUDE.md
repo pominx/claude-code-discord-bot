@@ -42,7 +42,7 @@ This bot runs Claude Code sessions on different projects based on Discord channe
 
 - Each Discord channel maps to a folder: `BASE_FOLDER/channel-name`
 - Sessions persist per channel with automatic resume using session IDs
-- Only responds to messages from the configured `ALLOWED_USER_ID`
+- Only responds to messages from the configured `ALLOWED_USER_ID` (or everyone in the channel if unset)
 - Streams Claude Code output and updates Discord messages in real-time
 - Shows the last 3 streamed responses in each message
 - Use `/clear` slash command to reset a session
@@ -55,8 +55,10 @@ This bot runs Claude Code sessions on different projects based on Discord channe
 
 Required environment variables:
 - `DISCORD_TOKEN` - Bot token from Discord Developer Portal
-- `ALLOWED_USER_ID` - Discord user ID who can use the bot
 - `BASE_FOLDER` - Base path where Claude Code operates (e.g., `/Users/tim/repos`)
+
+Optional environment variables:
+- `ALLOWED_USER_ID` - Discord user ID who can use the bot; if unset, everyone in the channel can use it
 
 ## Environment
 

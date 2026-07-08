@@ -53,6 +53,6 @@ export interface ChannelProcess {
 
 export interface Config {
   discordToken: string;
-  allowedUserId: string;
+  allowedUserId: string | undefined;
   baseFolder: string;
 }

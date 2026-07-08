@@ -27,7 +27,7 @@ bun test
 ## Security Notes
 
 - **Private Server Recommended**: Use a private Discord server for your repositories to avoid exposing project details
-- **User Restriction**: Only the configured `ALLOWED_USER_ID` can interact with the bot
+- **User Restriction**: Only the configured `ALLOWED_USER_ID` can interact with the bot; if unset, everyone in the channel can trigger Claude Code, use `/clear`, and approve tool requests - only do this on a trusted private server
 - **Environment Variables**: Keep your `.env` file secure and never commit it to version control
 - **Bot Token**: Keep your Discord bot token secure - treat it like a password
 
