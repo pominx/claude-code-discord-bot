@@ -4,7 +4,7 @@ import type { ClaudeManager } from '../claude/manager.js';
 export class CommandHandler {
   constructor(
     private claudeManager: ClaudeManager,
-    private allowedUserId: string
+    private allowedUserId: string | undefined
   ) {}
 
   getCommands() {
@@ -31,7 +31,7 @@ export class CommandHandler {
   async handleInteraction(interaction: any): Promise<void> {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.user.id !== this.allowedUserId) {
+    if (this.allowedUserId && interaction.user.id !== this.allowedUserId) {
       await interaction.reply({
         content: "You are not authorized to use this bot.",
         ephemeral: true,

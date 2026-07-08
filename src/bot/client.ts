@@ -14,7 +14,7 @@ export class DiscordBot {
 
   constructor(
     private claudeManager: ClaudeManager,
-    private allowedUserId: string
+    private allowedUserId: string | undefined
   ) {
     this.client = new Client({
       intents: [
@@ -66,8 +66,8 @@ export class DiscordBot {
     // Ignore bot reactions
     if (user.bot) return;
 
-    // Only process reactions from the authorized user
-    if (user.id !== this.allowedUserId) return;
+    // Only process reactions from the authorized user (everyone if unset)
+    if (this.allowedUserId && user.id !== this.allowedUserId) return;
 
     // Only process ✅ and ❌ reactions
     if (reaction.emoji.name !== '✅' && reaction.emoji.name !== '❌') return;
@@ -91,7 +91,7 @@ export class DiscordBot {
 
     console.log("MESSAGE CREATED", message.id);
 
-    if (message.author.id !== this.allowedUserId) {
+    if (this.allowedUserId && message.author.id !== this.allowedUserId) {
       return;
     }
 

@@ -17,7 +17,7 @@ A Discord bot that runs Claude Code sessions on different projects based on Disc
 4. Create `.env` file:
    ```env
    DISCORD_TOKEN=your_discord_bot_token_here
-   ALLOWED_USER_ID=your_discord_user_id_here
+   ALLOWED_USER_ID=your_discord_user_id_here  # optional; unset = everyone can use the bot
    BASE_FOLDER=/path/to/your/repos
    ```
 5. Run: `bun start`
@@ -90,6 +90,7 @@ Create a `.env` file in the project root:
 DISCORD_TOKEN=your_discord_bot_token_here
 
 # Your Discord user ID from step 4
+# Optional: leave unset to let everyone in the channel use the bot
 ALLOWED_USER_ID=your_discord_user_id_here
 
 # Base folder containing your repositories
@@ -163,7 +164,7 @@ Bot: 🔧 LS (path: .)
 - Each Discord channel maps to a folder: `#my-project` → `/path/to/repos/my-project`
 - Sessions persist per channel and automatically resume
 - Shows real-time tool usage and responses
-- Only responds to the configured `ALLOWED_USER_ID`
+- Only responds to the configured `ALLOWED_USER_ID` (or everyone in the channel if unset)
 
 For detailed setup instructions, troubleshooting, and development information, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
